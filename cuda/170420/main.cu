@@ -73,9 +73,9 @@ int main()
     cudaFree(d_src);
     cudaFree(d_dst);
 
-	CImgDisplay main_disp(dst, "After Processing");
-	while (!main_disp.is_closed())
-		main_disp.wait();
+    CImgDisplay main_disp(dst, "After Processing");
+    while (!main_disp.is_closed())
+        main_disp.wait();
 
     return 0;
 }
