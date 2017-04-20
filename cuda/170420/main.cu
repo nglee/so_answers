@@ -1,13 +1,5 @@
-/*
- * Compile      : nvcc main.cu -lX11
- *
- * Prerequisite : sudo apt install cimg-dev
- */
-#include "cuda_runtime.h"
-#include "device_launch_parameters.h"
-
+#include <cuda_runtime.h>
 #include "CImg.h"
-#include <iostream>
 
 using namespace std;
 using namespace cimg_library;
@@ -20,6 +12,10 @@ __global__ void rgb2gray(unsigned char * d_src, unsigned char * d_dst, int width
 	if (pos_x >= width || pos_y >= height)
 	    return;
 
+	/*
+	 * CImg RGB channels are split, not interleaved.
+	 * (http://cimg.eu/reference/group__cimg__storage.html)
+	 */
 	unsigned char r = d_src[pos_y * width + pos_x];
 	unsigned char g = d_src[(height + pos_y ) * width + pos_x];
 	unsigned char b = d_src[(height * 2 + pos_y) * width + pos_x];
@@ -33,15 +29,11 @@ __global__ void rgb2gray(unsigned char * d_src, unsigned char * d_dst, int width
 
 int main()
 {
-    //Load image
+    //load image
     CImg<unsigned char> src("lena.gif");
     int width = src.width();
     int height = src.height();
-    unsigned long sizee = src.size();
-
-    int sze = width * height;
-
-    cout << sze << endl;
+    unsigned long size = src.size();
 
     //create pointer to image
     unsigned char *h_src = src.data();
@@ -52,22 +44,20 @@ int main()
     unsigned char *d_src;
     unsigned char *d_dst;
 
-    cout << sizee << endl;
-
-    cudaMalloc((void**)&d_src, sizee);
+    cudaMalloc((void**)&d_src, size);
     cudaMalloc((void**)&d_dst, width*height*sizeof(unsigned char));
 
-    cudaMemcpy(d_src, h_src, sizee, cudaMemcpyHostToDevice);
+    cudaMemcpy(d_src, h_src, size, cudaMemcpyHostToDevice);
 
     //launch the kernel
 	dim3 blkDim (16, 16, 1);
 	dim3 grdDim ((width + 15)/16, (height + 15)/16, 1);
 	rgb2gray<<<grdDim, blkDim>>>(d_src, d_dst, width, height);
 
-    //force the printf()s to flush
+	//wait until kernel finishes
     cudaDeviceSynchronize();
 
-    // copy back the result array to the CPU
+    //copy back the result to CPU
     cudaMemcpy(h_dst, d_dst, width*height, cudaMemcpyDeviceToHost);
 
     cudaFree(d_src);
