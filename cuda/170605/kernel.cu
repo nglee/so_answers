@@ -13,40 +13,43 @@ void _CheckCudaError(cudaError_t ret, char *file, int line)
 }
 #define CheckCudaError(call)	_CheckCudaError((call), __FILE__, __LINE__)
 
-__global__ void copyKernel(const unsigned char* a, unsigned char* b)
+template <typename T>
+__global__ void copyKernel(const T* __restrict__ a, T* __restrict__ b)
 {
     int i = threadIdx.x + blockIdx.x * blockDim.x;
 	b[i] = a[i];
 }
 
-int main()
+template <typename T>
+void test()
 {
 	// test up to 1M element
 	const int arraySize = 1024 * 1024;
-	const int memSize = arraySize * sizeof(unsigned char);
+	const int memSize = arraySize * sizeof(T);
 
-	unsigned char* a = (unsigned char*)malloc(memSize);
-	unsigned char* b = (unsigned char*)malloc(memSize);
+	T* a = (T*)malloc(memSize);
+	T* b = (T*)malloc(memSize);
 
 	for (int i = 0; i < arraySize; i++)
-		a[i] = i%256;
+		a[i] = i % 256;                                 // value cap at max value of unsigned char type
 
-	unsigned char* d_a;
-	unsigned char* d_b;
+	T* d_a;
+	T* d_b;
 
 	CheckCudaError(cudaMalloc(&d_a, memSize));
 	CheckCudaError(cudaMalloc(&d_b, memSize));
 
 	CheckCudaError(cudaMemcpy(d_a, a, memSize, cudaMemcpyHostToDevice));
 
+	// test from 1 threads to 31 threads
 	for (int i = 1; i <= 31; i++)
-		copyKernel<<<1, i>>>(d_a, d_b);
+		copyKernel<T><<<1, i>>>(d_a, d_b);
 
-	// test from 1 threads to 1K threads
+	// test from 32 threads to 1K threads
 	for (int i = 32; i <= 1024; i *= 2) {
 		CheckCudaError(cudaMemset(d_b, 0, memSize));    // reset device memory of b to 0
 
-		copyKernel<<<1, i>>>(d_a, d_b);
+		copyKernel<T><<<1, i>>>(d_a, d_b);
 
 		CheckCudaError(cudaMemcpy(b, d_b, memSize, cudaMemcpyDeviceToHost));
 
@@ -62,7 +65,7 @@ int main()
 	for (int i = 1024; i <= 1024 * 1024; i *= 2) {
 		CheckCudaError(cudaMemset(d_b, 0, memSize));    // reset device memory of b to 0
 
-		copyKernel<<<1024, i/1024>>>(d_a, d_b);
+		copyKernel<T><<<1024, i/1024>>>(d_a, d_b);
 
 		CheckCudaError(cudaMemcpy(b, d_b, memSize, cudaMemcpyDeviceToHost));
 
@@ -74,7 +77,12 @@ int main()
 				b[j] = 0;                               // reset host memory of b to 0
 	} 
 
-	CheckCudaError(cudaDeviceReset());
+}
 
-    return 0;
+int main()
+{
+	test<unsigned char>();
+	test<int>();
+
+	CheckCudaError(cudaDeviceReset());
 }
