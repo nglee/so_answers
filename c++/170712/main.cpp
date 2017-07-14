@@ -49,6 +49,7 @@ bool solve2(int S, int X)
     return true;
 }
 
+// check whether the accepted answer and my answer gives identical solution
 int main()
 {
     /*while (true) {
