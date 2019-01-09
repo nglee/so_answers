@@ -25,8 +25,8 @@ int main()
 	for (int i = 16; i < 32; i++)
 		data[i] += dummy[i - 16];
 
-	printf("kernel  : ");
+	printf("host    : ");
 	for (int i = 0; i < 32; i++)
 		printf("%4i ", data[i]);
-	printf("\n");
+	printf("(host)\n");
 }

@@ -43,5 +43,5 @@ int main()
 	printf("kernel1 : ");
 	for (int i = 0; i < 32; i++)
 		printf("%4i ", result[i]);
-	printf("\n");
+	printf("(device, shared memory)\n");
 }
