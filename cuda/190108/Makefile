@@ -1,4 +1,4 @@
-OBJS = test_host test_dev0 test_dev1 test_arch test_dev2
+OBJS = test_host test_dev0 test_dev1 test_arch test_dev2 test_dev3 test_dev4
 SCRIPT = run.sh
 
 all: $(OBJS) $(SCRIPT)
@@ -22,6 +22,12 @@ test_arch: test1.cu
 	nvcc -o $@ $< -arch=sm_61
 
 test_dev2: test2.cu
+	nvcc -o $@ $<
+
+test_dev3: test3.cu
+	nvcc -o $@ $<
+
+test_dev4: test4.cu
 	nvcc -o $@ $<
 
 clean:
